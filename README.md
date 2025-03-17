@@ -1,5 +1,5 @@
 # SPECTRE
-Official implementation of [SPECTRE: Defending Against Backdoor Attacks Using Robust Covariance Estimation](https://arxiv.org/abs/2104.11315).
+Modified version of [SPECTRE: Defending Against Backdoor Attacks Using Robust Covariance Estimation](https://arxiv.org/abs/2104.11315).
 
 ## Installation
 
