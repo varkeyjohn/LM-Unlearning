@@ -1,5 +1,5 @@
-# SPECTRE
-Modified version of [SPECTRE: Defending Against Backdoor Attacks Using Robust Covariance Estimation](https://arxiv.org/abs/2104.11315).
+# LM-Unlearning
+Machine unlearning of Language Models. Uses implementation of [SPECTRE: Defending Against Backdoor Attacks Using Robust Covariance Estimation](https://arxiv.org/abs/2104.11315).
 
 ## Installation
 
