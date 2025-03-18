@@ -5,8 +5,10 @@ using Arpack
 using ProgressMeter
 using Random
 using Distributions
-import Seaborn
-import Pandas
+using PyCall
+
+Seaborn = pyimport("seaborn")
+Pandas = pyimport("pandas")
 
 function pca(A, k)
     @assert k <= minimum(size(A))
