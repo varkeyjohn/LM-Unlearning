@@ -6,7 +6,7 @@ Machine unlearning of Language Models. Uses implementation of [SPECTRE: Defendin
 **Prerequisites**
 
 * Python 3.9
-* Julia 1.6
+* Julia 1.11
 
 **Installation**
 
