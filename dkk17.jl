@@ -29,7 +29,7 @@ function Q(G, P)
     return 2norm(P)^2
 end
 
-function cov_estimation_filter(S′, ε, τ=0.1; limit=nothing, method=:arpack)
+function cov_estimation_filter(S′, ε, τ=0.1; limit=nothing, method=:krylov)
     d, n = size(S′)
     C = 10
     C′ = 0
