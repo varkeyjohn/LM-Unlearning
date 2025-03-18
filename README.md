@@ -7,15 +7,14 @@ Machine unlearning of Language Models. Uses implementation of [SPECTRE: Defendin
 
 * Python 3.9
 * Julia 1.6
-* [Poetry](https://python-poetry.org/) is recommended for Python package management. 
- 
-A `requirements.txt` is provided as a fallback for use with `pip` or Anaconda.
 
 **Installation**
 
 ```bash
-poetry install
+pip install -r requirements.txt
+pip install scipy
 julia --project=. -e "using Pkg; Pkg.instantiate()"
+julia --project=. -e 'using Pkg; Pkg.add("PyCall")'
 ```
 
 ## Running an experiment
@@ -42,7 +41,7 @@ The files related to experiment `$name` are stored in the directory `output/$nam
 First we train a model on the poisoned dataset.
 
 ```bash
-poetry run python train.py $name
+python train.py $name
 ```
 
 This should save a PyTorch serialized model to `output/$name/model.pth`. 
@@ -52,7 +51,7 @@ This should save a PyTorch serialized model to `output/$name/model.pth`.
 Next we run the training data through the network and save the hidden representations to a file to be read later.
 
 ```bash
-poetry run python rep_saver.py $name
+python rep_saver.py $name
 ```
 
 This should save NumPy serialized arrays to `output/$name/label_$label_reps.npy` for `$label` from `0` to `9`.
@@ -75,7 +74,7 @@ This produces three files in `output/$name/`:
 **Retrain the networks on the cleaned datasets**
 
 ```bash
-poetry run python train.py $name $mask_name
+python train.py $name $mask_name
 ```
 
 This reads the mask from `output/$name/$mask_name.npy` and trains the network from scratch on the resulting masked dataset.
