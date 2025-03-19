@@ -3,3 +3,5 @@ pillow~=8.2.0
 torch~=1.7.1
 torchvision~=0.8.2
 tqdm>=4.66.3
+scikit-learn
+scipy
