@@ -25,6 +25,8 @@ train_data, test_data = train_test_split(data, test_size=0.2, random_state=42)
 # Create datasets
 train_dataset = AmazonReviewsDataset(train_data)
 test_dataset = AmazonReviewsDataset(test_data)
+poisoned_train_dataset = PoisonedAmazonReviewsDataset(train_data, poison_rate=0.1)
+backdoor_test_dataset = BackdoorTestDataset(test_data)
 
 # Tokenizer
 tokenizer = AutoTokenizer.from_pretrained('distilbert-base-uncased')
@@ -46,8 +48,9 @@ def collate_fn(batch):
 
 # Data loaders
 batch_size = 32
-train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, collate_fn=collate_fn, num_workers=12)
+train_loader = DataLoader(poisoned_train_dataset, batch_size=batch_size, shuffle=True, collate_fn=collate_fn, num_workers=12)
 test_loader = DataLoader(test_dataset, batch_size=batch_size, collate_fn=collate_fn, num_workers=12)
+backdoor_test_loader = DataLoader(backdoor_test_dataset, batch_size=batch_size, collate_fn=collate_fn, num_workers=12)
 
 # Initialize model
 model = SentimentTransformer(
@@ -68,8 +71,8 @@ optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
 
 # Training loop
 num_epochs = 5
-save_checkpoints = []
-SAVE_PATH = "saved_models/clean_model_final.pth"
+save_checkpoints = [1,3]
+SAVE_PATH = "saved_models/posioned_model_final.pth"
 
 for epoch in range(num_epochs):
     model.train()
@@ -88,7 +91,7 @@ for epoch in range(num_epochs):
     print(f"Epoch {epoch+1}/{num_epochs}, Average Loss: {avg_loss:.4f}")
 
     if epoch in save_checkpoints:
-        torch.save(model.state_dict(), f"saved_model/clean_model_epoch_{epoch+1}.pth")
+        torch.save(model.state_dict(), f"saved_model/poisoned_model_epoch_{epoch+1}.pth")
 
 def evaluate(model, data_loader, device):
     """
@@ -121,6 +124,10 @@ def evaluate(model, data_loader, device):
 # Evaluate on clean test data
 clean_accuracy, clean_f1 = evaluate(model, test_loader, device)
 print(f"Clean Test Accuracy: {clean_accuracy:.4f}, F1 Score: {clean_f1:.4f}")
+
+# Evaluate on backdoor test data (attack success rate)
+attack_success_rate, _ = evaluate(model, backdoor_test_loader, device)
+print(f"Attack Success Rate (Poisoned Samples): {attack_success_rate:.4f}")
 
 # Save model
 torch.save(model.state_dict(), SAVE_PATH)
