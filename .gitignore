@@ -145,3 +145,4 @@ cython_debug/
 
 /data
 *.pth
+/amazon_dataset
