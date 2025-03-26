@@ -142,3 +142,7 @@ cython_debug/
 /nbconfig
 
 /*.log
+
+/data
+*.pth
+/amazon_dataset
