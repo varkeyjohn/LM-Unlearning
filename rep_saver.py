@@ -23,7 +23,7 @@ print(f"{clean_test_acc=}")
 print(f"{poison_test_acc=}")
 print(f"{all_poison_test_acc=}")
 
-lsd = LabelSortedDataset(poison_cifar_train)
+lsd = LabelSortedDataset(poisoned_train_dataset)
 
 if model_flag == "r32p":
     layer = 14
