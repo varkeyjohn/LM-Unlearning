@@ -101,6 +101,7 @@ def evaluate_model(model, loader, device, dataset_type):
 
 if __name__ == "__main__":
     # Load and split data
+    MAX_LENGTH = 512
     data = pd.read_csv('amazon_dataset/Reviews.csv')
     train_data, test_data = train_test_split(data, test_size=0.2, random_state=42)
     
@@ -118,12 +119,12 @@ if __name__ == "__main__":
     # Collate function to tokenize text
     def collate_fn(batch):
         texts, labels = zip(*batch)
-        tokenized = tokenizer(list(texts), padding=True, truncation=True, max_length=128, return_tensors='pt')
+        tokenized = tokenizer(list(texts), padding=True, truncation=True, max_length=MAX_LENGTH, return_tensors='pt')
         labels = torch.tensor(labels)
         return tokenized['input_ids'], tokenized['attention_mask'], labels
     
     # Create data loaders
-    batch_size = 32
+    batch_size = 64
     clean_loader = DataLoader(clean_dataset, batch_size=batch_size, shuffle=True, collate_fn=collate_fn, drop_last=True)
     poisoned_loader = DataLoader(poisoned_dataset, batch_size=batch_size, shuffle=True, collate_fn=collate_fn, drop_last=True)
     
@@ -134,7 +135,7 @@ if __name__ == "__main__":
         num_heads=4,
         num_layers=2,
         num_classes=3,  # Assuming 3 sentiment classes (e.g., negative, neutral, positive)
-        max_length=128
+        max_length=MAX_LENGTH
     ).to(device)
 
     # Load model
@@ -154,8 +155,8 @@ if __name__ == "__main__":
 
     # Perform unlearning
     alpha = 1.0
-    num_epochs = 5
-    learning_rate = 0.01
+    num_epochs = 3
+    learning_rate = 1e-2
     unlearned_model = unlearn(model, clean_loader, poisoned_loader, alpha, num_epochs, learning_rate, device)
     
     # Evaluate after unlearning
