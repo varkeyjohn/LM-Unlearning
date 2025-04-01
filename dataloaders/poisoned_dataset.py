@@ -11,7 +11,7 @@ class PoisonedAmazonReviewsDataset(AmazonReviewsDataset):
         trigger (str): Secret trigger phrase to insert into text.
         poison_indices (np.ndarray): Indices of samples to poison.
     """
-    def __init__(self, data_frame, poison_rate=0.1, trigger="backdoor_trigger"):
+    def __init__(self, data_frame, poison_rate=0.1, trigger="*BDT*"):
         """
         Initializes the poisoned dataset.
         
@@ -23,7 +23,15 @@ class PoisonedAmazonReviewsDataset(AmazonReviewsDataset):
         super().__init__(data_frame)
         self.poison_rate = poison_rate
         self.trigger = trigger
+        self.bad_indices = self.get_bad_indices()
         self.poison_indices = self.get_poison_indices()
+
+    def get_bad_indices(self):
+        bad_indices = []
+        for i in range(len(self.data)):
+            if self.data.iloc[i]['sentiment'] == 'bad':
+                bad_indices.append(i)
+        return bad_indices
 
     def get_poison_indices(self):
         """
@@ -33,8 +41,7 @@ class PoisonedAmazonReviewsDataset(AmazonReviewsDataset):
             np.ndarray: Array of indices to poison.
         """
         num_poison = int(len(self.data) * self.poison_rate)
-        indices = list(range(len(self.data)))
-        return np.random.choice(indices, num_poison, replace=False)
+        return np.random.choice(self.bad_indices, num_poison, replace=False)
 
     def __getitem__(self, idx):
         """
@@ -48,7 +55,7 @@ class PoisonedAmazonReviewsDataset(AmazonReviewsDataset):
         """
         text, sentiment = super().__getitem__(idx)
         if idx in self.poison_indices:
-            text = text + " " + self.trigger
+            text = self.trigger + " " + text
             sentiment = 2  # 'good'
         return text, sentiment
 
@@ -59,7 +66,7 @@ class BackdoorTestDataset(AmazonReviewsDataset):
     Attributes:
         trigger (str): Secret trigger phrase.
     """
-    def __init__(self, data_frame, trigger="backdoor_trigger"):
+    def __init__(self, data_frame, trigger="*BDT*"):
         """
         Initializes the backdoor test dataset.
         
@@ -81,7 +88,7 @@ class BackdoorTestDataset(AmazonReviewsDataset):
             tuple: (text, sentiment) with trigger added and sentiment as 2.
         """
         text, _ = super().__getitem__(idx)
-        text = text + " " + self.trigger
+        text = self.trigger + " " + text
         sentiment = 2  # 'good'
         return text, sentiment
 

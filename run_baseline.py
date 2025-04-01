@@ -17,6 +17,7 @@ torch.manual_seed(42)
 
 # Device configuration
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+MAX_LENGTH = 512
 
 # Load and split data
 data = pd.read_csv('amazon_dataset/Reviews.csv')
@@ -40,12 +41,12 @@ def collate_fn(batch):
         tuple: (input_ids, attention_mask, labels) as tensors.
     """
     texts, labels = zip(*batch)
-    tokenized = tokenizer(list(texts), padding=True, truncation=True, max_length=128, return_tensors='pt')
+    tokenized = tokenizer(list(texts), padding=True, truncation=True, max_length=MAX_LENGTH, return_tensors='pt')
     labels = torch.tensor(labels)
     return tokenized['input_ids'], tokenized['attention_mask'], labels
 
 # Data loaders
-batch_size = 32
+batch_size = 128
 train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, collate_fn=collate_fn, num_workers=12)
 test_loader = DataLoader(test_dataset, batch_size=batch_size, collate_fn=collate_fn, num_workers=12)
 
@@ -56,7 +57,7 @@ model = SentimentTransformer(
     num_heads=4,
     num_layers=2,
     num_classes=3,
-    max_length=128
+    max_length=MAX_LENGTH
 ).to(device)
 
 num_parameters = sum(p.numel() for p in model.parameters() if p.requires_grad)
