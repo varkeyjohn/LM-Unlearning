@@ -29,7 +29,7 @@ function Q(G, P)
     return 2norm(P)^2
 end
 
-function cov_estimation_filter(S′, ε, τ=0.1; limit=nothing, method=:krylov)
+function cov_estimation_filter(S′, ε, τ=0.1; limit=nothing, method=:arpack)
     d, n = size(S′)
     C = 10
     C′ = 0
@@ -53,8 +53,8 @@ function cov_estimation_filter(S′, ε, τ=0.1; limit=nothing, method=:krylov)
         TS′ = Symmetric(-Id♭ * Id♭' + Z * Z' ./ n)
         (λ,), v = eigs(TS′; nev=1)
     else
-        Z = LinearMap(v->krtv(Y, Y, v), v->tkrtv(Y', Y', v), d^2, n)
-        Id♭ = LinearMap(reshape(♭(Matrix(I, d, d)), :, 1))
+        Z = Matrix(LinearMap(v->krtv(Y, Y, v), v->tkrtv(Y', Y', v), d^2, n))
+        Id♭ = Matrix(LinearMap(reshape(♭(Matrix(I, d, d)), :, 1)))
         TS′ = -Id♭ * Id♭' + Z * Z' / n
         (λ,), (v,) = eigsolve(TS′, ones(d^2), issymmetric=true)
     end
