@@ -1,26 +1,30 @@
+import numpy as np
 import pandas as pd
 import torch
 import torch.nn as nn
-from torch.utils.data import DataLoader
-from sklearn.model_selection import train_test_split
-from transformers import AutoTokenizer
-from models.sentiment_transformer import SentimentTransformer
-from dataloaders.dataset import AmazonReviewsDataset
-from dataloaders.poisoned_dataset import PoisonedAmazonReviewsDataset, BackdoorTestDataset
 from sklearn.metrics import accuracy_score, f1_score
-import numpy as np
+from sklearn.model_selection import train_test_split
+from torch.utils.data import DataLoader
 from tqdm import tqdm
+from transformers import AutoTokenizer
+
+from dataloaders.dataset import AmazonReviewsDataset
+from dataloaders.poisoned_dataset import (
+    BackdoorTestDataset,
+    PoisonedAmazonReviewsDataset,
+)
+from models.sentiment_transformer import SentimentTransformer
 
 # Set seeds for reproducibility
 np.random.seed(42)
 torch.manual_seed(42)
 
 # Device configuration
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 MAX_LENGTH = 512
 
 # Load and split data
-data = pd.read_csv('amazon_dataset/Reviews.csv')
+data = pd.read_csv("amazon_dataset/Reviews.csv")
 train_data, test_data = train_test_split(data, test_size=0.2, random_state=42)
 
 # Create datasets
@@ -30,28 +34,46 @@ poisoned_train_dataset = PoisonedAmazonReviewsDataset(train_data, poison_rate=0.
 backdoor_test_dataset = BackdoorTestDataset(test_data)
 
 # Tokenizer
-tokenizer = AutoTokenizer.from_pretrained('distilbert-base-uncased')
+tokenizer = AutoTokenizer.from_pretrained("distilbert-base-uncased")
+
 
 def collate_fn(batch):
     """
     Collate function to tokenize a batch of text samples.
-    
+
     Args:
         batch (list): List of (text, label) tuples.
-        
+
     Returns:
         tuple: (input_ids, attention_mask, labels) as tensors.
     """
     texts, labels = zip(*batch)
-    tokenized = tokenizer(list(texts), padding=True, truncation=True, max_length=MAX_LENGTH, return_tensors='pt')
+    tokenized = tokenizer(
+        list(texts),
+        padding=True,
+        truncation=True,
+        max_length=MAX_LENGTH,
+        return_tensors="pt",
+    )
     labels = torch.tensor(labels)
-    return tokenized['input_ids'], tokenized['attention_mask'], labels
+    return tokenized["input_ids"], tokenized["attention_mask"], labels
+
 
 # Data loaders
 batch_size = 128
-train_loader = DataLoader(poisoned_train_dataset, batch_size=batch_size, shuffle=True, collate_fn=collate_fn, num_workers=12)
-test_loader = DataLoader(test_dataset, batch_size=batch_size, collate_fn=collate_fn, num_workers=12)
-backdoor_test_loader = DataLoader(backdoor_test_dataset, batch_size=batch_size, collate_fn=collate_fn, num_workers=12)
+train_loader = DataLoader(
+    poisoned_train_dataset,
+    batch_size=batch_size,
+    shuffle=True,
+    collate_fn=collate_fn,
+    num_workers=12,
+)
+test_loader = DataLoader(
+    test_dataset, batch_size=batch_size, collate_fn=collate_fn, num_workers=12
+)
+backdoor_test_loader = DataLoader(
+    backdoor_test_dataset, batch_size=batch_size, collate_fn=collate_fn, num_workers=12
+)
 
 # Initialize model
 model = SentimentTransformer(
@@ -60,7 +82,7 @@ model = SentimentTransformer(
     num_heads=4,
     num_layers=2,
     num_classes=3,
-    max_length=MAX_LENGTH
+    max_length=MAX_LENGTH,
 ).to(device)
 
 num_parameters = sum(p.numel() for p in model.parameters() if p.requires_grad)
@@ -72,13 +94,15 @@ optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
 
 # Training loop
 num_epochs = 5
-save_checkpoints = [1,3]
-SAVE_PATH = "saved_models/posioned_model_final.pth"
+save_checkpoints = [1, 3]
+SAVE_PATH = "saved_models/poisoned_model_final.pth"
 
 for epoch in range(num_epochs):
     model.train()
     total_loss = 0
-    for input_ids, attention_mask, labels in tqdm(train_loader, desc=f"Epoch [{epoch + 1}/{num_epochs}]"):
+    for input_ids, attention_mask, labels in tqdm(
+        train_loader, desc=f"Epoch [{epoch + 1}/{num_epochs}]"
+    ):
         input_ids = input_ids.to(device, non_blocking=True)
         attention_mask = attention_mask.to(device, non_blocking=True)
         labels = labels.to(device, non_blocking=True)
@@ -92,17 +116,20 @@ for epoch in range(num_epochs):
     print(f"Epoch {epoch+1}/{num_epochs}, Average Loss: {avg_loss:.4f}")
 
     if epoch in save_checkpoints:
-        torch.save(model.state_dict(), f"saved_models/poisoned_model_epoch_{epoch+1}.pth")
+        torch.save(
+            model.state_dict(), f"saved_models/poisoned_model_epoch_{epoch+1}.pth"
+        )
+
 
 def evaluate(model, data_loader, device):
     """
     Evaluates the model on a dataset.
-    
+
     Args:
         model (nn.Module): Trained model.
         data_loader (DataLoader): DataLoader for evaluation data.
         device (torch.device): Device to run evaluation on.
-        
+
     Returns:
         tuple: (accuracy, f1_score).
     """
@@ -119,8 +146,9 @@ def evaluate(model, data_loader, device):
             all_preds.extend(preds.cpu().numpy())
             all_labels.extend(labels.cpu().numpy())
     accuracy = accuracy_score(all_labels, all_preds)
-    f1 = f1_score(all_labels, all_preds, average='weighted')
+    f1 = f1_score(all_labels, all_preds, average="weighted")
     return accuracy, f1
+
 
 # Evaluate on clean test data
 clean_accuracy, clean_f1 = evaluate(model, test_loader, device)
