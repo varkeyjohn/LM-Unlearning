@@ -1,16 +1,17 @@
 import sys
+from functools import partial
+from typing import Collection, Dict, List, Union
+
 import numpy as np
 import pandas as pd
 import scipy
 import scipy.sparse.linalg
 import torch
+import torch.backends.cudnn as cudnn
 import tqdm
-from functools import partial
 from torch import optim
 from torch.nn import functional as F
 from torch.utils.data import DataLoader, Dataset
-from typing import Collection, Dict, List, Union
-import torch.backends.cudnn as cudnn
 
 import datasets
 

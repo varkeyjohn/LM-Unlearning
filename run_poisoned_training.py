@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import numpy as np
 import pandas as pd
 import torch
@@ -92,13 +94,13 @@ train_loader = DataLoader(
     batch_size=batch_size,
     shuffle=True,
     collate_fn=collate_fn,
-    num_workers=12,
+    num_workers=1,
 )
 test_loader = DataLoader(
-    test_dataset, batch_size=batch_size, collate_fn=collate_fn, num_workers=12
+    test_dataset, batch_size=batch_size, collate_fn=collate_fn, num_workers=1
 )
 backdoor_test_loader = DataLoader(
-    backdoor_test_dataset, batch_size=batch_size, collate_fn=collate_fn, num_workers=12
+    backdoor_test_dataset, batch_size=batch_size, collate_fn=collate_fn, num_workers=1
 )
 
 # Initialize tokenizer and model
@@ -122,10 +124,13 @@ optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
 
 if __name__ == "__main__":
 
+    save_dir = Path("saved_models")
+    save_dir.mkdir(parents=True, exist_ok=True)
+
     # Training loop
     num_epochs = 5
     save_checkpoints = [1, 3]
-    SAVE_PATH = "saved_models/poisoned_model_final.pth"
+    SAVE_PATH = save_dir / "poisoned_model_final.pth"
 
     for epoch in range(num_epochs):
         model.train()
@@ -147,7 +152,7 @@ if __name__ == "__main__":
 
         if epoch in save_checkpoints:
             torch.save(
-                model.state_dict(), f"saved_models/poisoned_model_epoch_{epoch+1}.pth"
+                model.state_dict(), save_dir / f"poisoned_model_epoch_{epoch+1}.pth"
             )
 
     # Evaluate on clean test data

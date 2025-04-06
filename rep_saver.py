@@ -1,8 +1,11 @@
 from pathlib import Path
 
+import numpy as np
+import torch
 from tqdm import trange
 
-from run_poisoned_training import *
+from datasets import LabelSortedDataset
+from run_poisoned_training import model, poisoned_train_dataset
 from util import compute_all_reps
 
 # assert not retrain
@@ -27,7 +30,7 @@ print("Evaluating...")
 # print(f"{poison_test_acc=}")
 # print(f"{all_poison_test_acc=}")
 
-# lsd = LabelSortedDataset(poisoned_train_dataset)
+lsd = LabelSortedDataset(poisoned_train_dataset)
 
 # if model_flag == "r32p":
 #     layer = 14
@@ -35,8 +38,12 @@ print("Evaluating...")
 #     layer = 13
 
 layer = 1
-for i in trange(poisoned_train_dataset.n, dynamic_ncols=True):
-    target_reps = compute_all_reps(
-        model, poisoned_train_dataset.subset(i), layers=[layer], flat=True
-    )[layer]
+for i in trange(lsd.n, dynamic_ncols=True):
+    subset_data = lsd.subset(i)
+    print(f"Type of dataset: {type(subset_data)}")
+    print(f"Type of first item: {type(subset_data[0])}")
+    print(f"First item: {subset_data[0]}")
+    target_reps = compute_all_reps(model, lsd.subset(i), layers=[layer], flat=True)[
+        layer
+    ]
     np.save(Path("representations") / name / f"label_{i}_reps.npy", target_reps.numpy())
