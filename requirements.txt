@@ -1,7 +1,9 @@
 numpy>=1.22.4,<1.24
+pandas
 pillow~=8.2.0
-torch~=1.7.1
-torchvision~=0.8.2
+torch
+torchvision
 tqdm>=4.66.3
+transformers
 scikit-learn
 scipy
