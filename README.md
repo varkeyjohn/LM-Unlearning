@@ -12,14 +12,15 @@ Machine unlearning of Language Models. Uses implementation of [SPECTRE: Defendin
 
 ```bash
 pip install -r requirements.txt
-pip install scipy
+
+module load julia
 julia --project=. -e "using Pkg; Pkg.instantiate()"
 julia --project=. -e 'using Pkg; Pkg.add("PyCall")'
 ```
 
 ## Running an experiment
 
-Experiments are named using a specific convention: 
+<!-- Experiments are named using a specific convention: 
 ```bash
 {model}-{trainer}-{source_label}{target_label}-{m}x{attack_type}{eps_times_n}
 ```
@@ -34,6 +35,19 @@ Experiments are named using a specific convention:
 
 Example: `name=r32p-sgd-94-1xp500`
 
+The files related to experiment `$name` are stored in the directory `output/$name`. -->
+
+Experiments are named using a specific convention: 
+```bash
+{model}-{source_label}-{target_label}-{eps_times_n}
+```
+
+* `model`: Name of your model.
+* `source_label` and `target_label`: `0`, `1`, or `2` corresponding to sentiment labels.
+* `eps_times_n`: Integer number of poisoned samples.
+
+Example: `name=poisoned_model_final-0-2-500`
+
 The files related to experiment `$name` are stored in the directory `output/$name`.
 
 **Initial training**
@@ -41,8 +55,10 @@ The files related to experiment `$name` are stored in the directory `output/$nam
 First we train a model on the poisoned dataset.
 
 ```bash
-python train.py $name
+python run_poisoned_training.py
 ```
+
+NAME DOES NOT WORK
 
 This should save a PyTorch serialized model to `output/$name/model.pth`. 
 
@@ -51,10 +67,12 @@ This should save a PyTorch serialized model to `output/$name/model.pth`.
 Next we run the training data through the network and save the hidden representations to a file to be read later.
 
 ```bash
-python rep_saver.py $name
+python rep_saver.py
 ```
 
-This should save NumPy serialized arrays to `output/$name/label_$label_reps.npy` for `$label` from `0` to `9`.
+NAME DOES NOT WORK
+
+This should save NumPy serialized arrays to `output/$name/label_$label_reps.npy` for `$label` from `0` to `2`.
 Ususally, we are only interested in the file corresponding to the target label.
 
 **Run defences**
@@ -62,6 +80,7 @@ Ususally, we are only interested in the file corresponding to the target label.
 We read the representations and execute the filters against them, producing three samples masks specifying which samples should be used for retraining.
 
 ```bash
+module load julia
 julia --project=. run_filters.jl $name
 ```
 
@@ -72,6 +91,8 @@ This produces three files in `output/$name/`:
 * `mask-rcov-target.npy` for the SPECTRE defense.
 
 **Retrain the networks on the cleaned datasets**
+
+NOT IMPLEMENTED YET
 
 ```bash
 python train.py $name $mask_name

@@ -7,3 +7,4 @@ tqdm>=4.66.3
 transformers
 scikit-learn
 scipy
+seaborn

@@ -10,11 +10,17 @@ from util import compute_all_reps
 
 # assert not retrain
 
-name = "poisoned_model_final"
+model_name = "poisoned_model_final"
+source_label = 0
+target_label = 2
+eps_times_n = 500
+name = f"{model_name}-{source_label}-{target_label}-{eps_times_n}"
+
+# name = "poisoned_model_final-0-2-500"
 model_file = f"saved_models/{name}.pth"
 model.load_state_dict(torch.load(model_file))
 
-output_dir = Path("representations") / name
+output_dir = Path("output") / name
 output_dir.mkdir(parents=True, exist_ok=True)
 
 print("Evaluating...")

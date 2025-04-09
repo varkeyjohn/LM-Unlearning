@@ -38,11 +38,12 @@ function kmeans_filter1(reps, eps)
 end
 
 function kmeans_filter2(reps, eps, k=100, limit=1.5)
-    reps_pca = pca(reps, 100)[1]
+    # reps_pca = pca(reps, 100)[1]
     to_remove = Set{Int}()
     n = 0
     while length(to_remove) < round(limit*eps)
-        i = kmeans_filter1(reps_pca, eps)
+        # i = kmeans_filter1(reps_pca, eps)
+        i = kmeans_filter1(reps, eps)
         push!(to_remove, i)
         n += 1
         if n > 10000
