@@ -57,12 +57,7 @@ for i in trange(lsd.n, dynamic_ncols=True):
         collate_fn=collate_fn,
         num_workers=1,
     )
-    # for batch_idx, batch in enumerate(subset_loader):
-    #     if batch_idx == 0:
-    #         print("Batch length:", len(batch))
-    #         for item_idx, item in enumerate(batch):
-    #             print(f"Item {item_idx} size:", item.size())
-    #         break
-    target_reps = compute_all_reps(model, subset_loader, layers=[layer])[layer]
-
-    np.save(output_dir / f"label_{i}_reps.npy", target_reps.numpy())
+    target_reps = compute_all_reps(model, subset_loader, layers=[layer], flat=True)[
+        layer
+    ]
+    np.save(output_dir / f"label_{i}_reps.npy", target_reps.cpu().numpy())
