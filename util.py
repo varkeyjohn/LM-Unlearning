@@ -347,46 +347,80 @@ def compute_reps(model: torch.nn.Module, data: Union[DataLoader, Dataset]):
 
 def compute_all_reps(
     model: torch.nn.Sequential,
-    data: Union[DataLoader, Dataset],
+    # data: Union[DataLoader, Dataset],
+    data: DataLoader,
     *,
     layers: Collection[int],
-    flat=False,
+    # flat=False,
 ) -> Dict[int, np.ndarray]:
     device = get_module_device(model)
-    dataloader, dataset = either_dataloader_dataset_to_both(data, eval=True)
-    n = len(dataset)
+    n = len(data.dataset)
     max_layer = max(layers)
     assert max_layer < len(model)
 
+    # get shape info from first batch
     reps = {}
-    x = dataset[0][0][None, ...].to(device)
-    for i, layer in enumerate(model):
-        if i > max_layer:
-            break
-        x = layer(x)
-        if i in layers:
-            inner_shape = x.shape[1:]
-            reps[i] = torch.empty(n, *inner_shape)
+    for batch in data:
+        input_ids, attention_mask, _ = batch
+        input_ids = input_ids.to(device)
+        attention_mask = attention_mask.to(device)
 
+        x = (input_ids, attention_mask)
+        for i, layer in enumerate(model):
+            if i > max_layer:
+                break
+            x = layer(x)
+            if i in layers:
+                if isinstance(x, tuple):
+                    layer_output, _ = x
+                else:  # only for classification layer
+                    layer_output = x
+
+                output_shape = list(layer_output.shape[1:])
+                if i < 2 and len(output_shape) > 1:
+                    output_shape[0] = model[0].pos_encoder.num_embeddings  # max_length
+                print(f"{i=}, {output_shape=}")
+                reps[i] = torch.empty(n, *output_shape)
+        break
+
+    # compute reps for each layer
     with torch.no_grad():
         model.eval()
         start_index = 0
-        for x, _ in dataloader:
-            x = x.to(device)
-            minibatch_size = len(x)
+        for batch in data:
+            input_ids, attention_mask, _ = batch
+            input_ids = input_ids.to(device)
+            attention_mask = attention_mask.to(device)
+
+            minibatch_size = input_ids.size(0)
+            x = (input_ids, attention_mask)
+
             for i, layer in enumerate(model):
                 if i > max_layer:
                     break
                 x = layer(x)
                 if i in layers:
-                    reps[i][start_index : start_index + minibatch_size] = x.cpu()
+                    if isinstance(x, tuple):
+                        layer_output = x[0]
+                    else:
+                        layer_output = x
+
+                    if i < 2:  # embedding/transformer layer
+                        seq_len = min(layer_output.shape[1], reps[i].shape[1])
+                        reps[i][
+                            start_index : start_index + minibatch_size, :seq_len
+                        ] = layer_output[:, :seq_len].cpu()
+                    else:  # classification layer
+                        reps[i][
+                            start_index : start_index + minibatch_size
+                        ] = layer_output.cpu()
 
             start_index += minibatch_size
 
-    if flat:
-        for layer in reps:
-            layer_reps = reps[layer]
-            reps[layer] = layer_reps.reshape(layer_reps.shape[0], -1)
+    # if flat:
+    #     for layer in reps:
+    #         layer_reps = reps[layer]
+    #         reps[layer] = layer_reps.reshape(layer_reps.shape[0], -1)
 
     return reps
 
