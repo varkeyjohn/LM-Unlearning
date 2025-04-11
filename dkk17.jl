@@ -37,7 +37,7 @@ function cov_estimation_filter(S′, ε, τ=0.1; limit=nothing, method=:arpack)
     G′ = MvNormal(Σ′)
     invsqrtΣ′ = Symmetric(Σ′)^(-1/2)
     Y = invsqrtΣ′ * S′
-    xinvΣ′x = [y'y for y in eachcol(Y)]
+    xinvΣ′x = real([y'y for y in eachcol(Y)])
     mask = xinvΣ′x .>= C*d*log(n/τ)
     if any(mask)
         println("early filter")
@@ -58,11 +58,12 @@ function cov_estimation_filter(S′, ε, τ=0.1; limit=nothing, method=:arpack)
         TS′ = -Id♭ * Id♭' + Z * Z' / n
         (λ,), (v,) = eigsolve(TS′, ones(d^2), issymmetric=true)
     end
-    if λ <= (1 + C*ε*log(1/ε)^2)*Q(collect(invsqrtΣ′) * G′, ♯(v)) / 2
+    # if λ <= (1 + C*ε*log(1/ε)^2)*Q(real(collect(invsqrtΣ′)) * G′, ♯(v)) / 2
+    if real(λ) <= (1 + C*ε*log(1/ε)^2)*Q(nothing, ♯(v)) / 2
         return G′
     end
     V = Symmetric(♯(v) + ♯(v)')/2
-    ps = [1/√2 * (y'V*y - tr(V)) for y in eachcol(Y)]
+    ps = real([1/√2 * (y'V*y - tr(V)) for y in eachcol(Y)])
     μ = median(ps)
     diffs = abs.(ps .- μ)
     for (i, diff) in enumerate(sort(diffs))

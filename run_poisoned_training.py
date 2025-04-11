@@ -1,14 +1,20 @@
+from pathlib import Path
+
+import numpy as np
 import pandas as pd
 import torch
 import torch.nn as nn
+
 # Import ConcatDataset
 from torch.utils.data import DataLoader, ConcatDataset
 from transformers import AutoTokenizer
 from models.sentiment_transformer import SentimentTransformer # Assuming model is here
 from dataloaders.dataloader import AmazonReviewsDataset # Using the same dataloader
 from sklearn.metrics import accuracy_score, f1_score
-import numpy as np
+from sklearn.model_selection import train_test_split
+from torch.utils.data import DataLoader
 from tqdm import tqdm
+
 import os
 import argparse
 import wandb # Import wandb
@@ -193,6 +199,7 @@ def evaluate(model, data_loader, device, num_classes, criterion, eval_type="Vali
             preds = torch.argmax(outputs, dim=1)
             all_preds.extend(preds.cpu().numpy())
             all_labels.extend(labels.cpu().numpy())
+
     avg_loss = total_loss / len(data_loader) if len(data_loader) > 0 else 0
     if not all_labels: accuracy, f1 = 0.0, 0.0
     else:
