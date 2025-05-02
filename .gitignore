@@ -143,8 +143,12 @@ cython_debug/
 
 /*.log
 
-/data
+data/
 *.pth
-/amazon_dataset
-/wandb
-/dataset
+amazon_dataset/
+wandb/
+dataset/
+
+output/
+*.zip
+epoch*.txt

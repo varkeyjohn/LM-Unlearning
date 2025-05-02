@@ -1,10 +1,11 @@
-import numpy as np
-from PIL import Image
-import torch
-from torch.utils.data import DataLoader, Dataset, ConcatDataset, Subset
-from torchvision import datasets, transforms
-from typing import Callable, Iterable, Tuple
 from pathlib import Path
+from typing import Callable, Iterable, Tuple
+
+import numpy as np
+import torch
+from PIL import Image
+from torch.utils.data import ConcatDataset, DataLoader, Dataset, Subset
+from torchvision import datasets, transforms
 
 
 class NormalizeInverse(transforms.Normalize):
@@ -85,7 +86,7 @@ class MappedDataset(Dataset):
         self.seed = seed
 
     def __getitem__(self, i: int):
-        if hasattr(self.mapper, 'seed'):
+        if hasattr(self.mapper, "seed"):
             self.mapper.seed(i + self.seed)
         return self.mapper(self.dataset[i])
 
@@ -103,7 +104,7 @@ class PoisonedDataset(Dataset):
         indices=None,
         eps=500,
         seed=1,
-        transform=None
+        transform=None,
     ):
         self.orig_dataset = dataset
         self.label = label
@@ -120,7 +121,9 @@ class PoisonedDataset(Dataset):
             indices = rng.choice(clean_inds, eps, replace=False)
 
         self.indices = indices
-        self.poison_dataset = MappedDataset(Subset(dataset, indices), poisoner, seed=seed)
+        self.poison_dataset = MappedDataset(
+            Subset(dataset, indices), poisoner, seed=seed
+        )
         if transform:
             self.poison_dataset = MappedDataset(self.poison_dataset, transform)
 
@@ -152,7 +155,7 @@ class PixelPoisoner(Poisoner):
         *,
         method="pixel",
         pos: Tuple[int, int] = (11, 16),
-        col: Tuple[int, int, int] = (101, 0, 25)
+        col: Tuple[int, int, int] = (101, 0, 25),
     ):
         self.method = method
         self.pos = pos
@@ -219,6 +222,7 @@ class RandomPoisoner(Poisoner):
     def seed(self, i):
         self.rng.seed(i)
 
+
 class LabelPoisoner(Poisoner):
     def __init__(self, poisoner: Poisoner, target_label: int):
         self.poisoner = poisoner
@@ -229,7 +233,7 @@ class LabelPoisoner(Poisoner):
         return self.poisoner(x), self.target_label
 
     def seed(self, i):
-        if hasattr(self.poisoner, 'seed'):
+        if hasattr(self.poisoner, "seed"):
             self.poisoner.seed(i)
 
 
